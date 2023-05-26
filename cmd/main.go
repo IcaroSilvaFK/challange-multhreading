@@ -13,34 +13,6 @@ import (
 	"time"
 )
 
-/*
-	{
-  "cep": "76530-000",
-  "logradouro": "",
-  "complemento": "",
-  "bairro": "",
-  "localidade": "Mundo Novo",
-  "uf": "GO",
-  "ibge": "5214051",
-  "gia": "",
-  "ddd": "62",
-  "siafi": "9651"
-}
-*/
-/*
-
-{
-  "code": "76530-000",
-  "state": "GO",
-  "city": "Mundo Novo",
-  "district": "",
-  "address": "",
-  "status": 200,
-  "ok": true,
-  "statusText": "ok"
-}
-*/
-
 type Cep struct {
 	Code       string `json:"code"`
 	State      string `json:"state"`
