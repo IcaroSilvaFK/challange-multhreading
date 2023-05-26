@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -100,7 +101,17 @@ func requestByApiViaCep(cep string, ch chan<- ViaCep) {
 	now := time.Now()
 	str := fmt.Sprintf("https://viacep.com.br/ws/%s/json/", cep)
 
-	data, err := http.Get(str)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, str, nil)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	data, err := http.DefaultClient.Do(req)
 
 	if err != nil {
 		log.Fatal(err)
@@ -128,8 +139,17 @@ func requestByApiCep(cep string, ch chan<- Cep) {
 
 	now := time.Now()
 	str := fmt.Sprintf("https://cdn.apicep.com/file/apicep/%s.json", cep)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 
-	data, err := http.Get(str)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, str, nil)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	data, err := http.DefaultClient.Do(req)
 
 	if err != nil {
 		log.Fatal(err)
