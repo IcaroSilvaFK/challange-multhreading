@@ -40,6 +40,8 @@ type ViaCep struct {
 func main() {
 	ch1 := make(chan ViaCep)
 	ch2 := make(chan Cep)
+	chTm1 := make(chan  time.Duration)
+	chTm2 := make(chan  time.Duration)
 
 	reader := bufio.NewReader(os.Stdin)
 
@@ -48,27 +50,27 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	go requestByApiViaCep(strings.TrimSpace(line), ch1)
-	go requestByApiCep(strings.TrimSpace(line), ch2)
+	go requestByApiViaCep(strings.TrimSpace(line), ch1,chTm1)
+	go requestByApiCep(strings.TrimSpace(line), ch2,chTm2)
 
 	select {
+	case cep := <-ch2:
+		{
+			fmt.Println("ApiCep foi mais rápido")
+			fmt.Printf("ApiCep Time taken: %v\n", <-chTm2)
+			fmt.Println(cep)
+		}
 	case cep := <-ch1:
 		{
 			fmt.Println("Via cep foi mais rápido")
-			fmt.Println(cep)
-
-		}
-	case cep := <-ch2:
-		{
-			fmt.Println("Cep foi mais rápido")
+			fmt.Printf("ApiCep Time taken: %v\n", <-chTm1)
 			fmt.Println(cep)
 		}
-
 	}
 
 }
 
-func requestByApiViaCep(cep string, ch chan<- ViaCep) {
+func requestByApiViaCep(cep string, ch chan<- ViaCep, chT chan<- time.Duration) {
 
 	now := time.Now()
 	str := fmt.Sprintf("https://viacep.com.br/ws/%s/json/", cep)
@@ -80,19 +82,19 @@ func requestByApiViaCep(cep string, ch chan<- ViaCep) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, str, nil)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	data, err := http.DefaultClient.Do(req)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	bt, err := io.ReadAll(data.Body)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	var cepCep ViaCep
@@ -103,11 +105,11 @@ func requestByApiViaCep(cep string, ch chan<- ViaCep) {
 
 	diff := time.Since(now)
 
-	fmt.Printf("Via cep Time taken: %s\n", diff)
 	ch <- cepCep
+	chT <- diff
 }
 
-func requestByApiCep(cep string, ch chan<- Cep) {
+func requestByApiCep(cep string, ch chan<- Cep,chT chan<- time.Duration) {
 
 	now := time.Now()
 	str := fmt.Sprintf("https://cdn.apicep.com/file/apicep/%s.json", cep)
@@ -131,7 +133,8 @@ func requestByApiCep(cep string, ch chan<- Cep) {
 
 	if err != nil {
 		log.Fatal(err)
-	}
+	}	
+
 
 	var cepCep Cep
 
@@ -141,7 +144,6 @@ func requestByApiCep(cep string, ch chan<- Cep) {
 
 	diff := time.Since(now)
 
-	fmt.Printf("Api Cep Time taken: %s\n", diff)
-
 	ch <- cepCep
+	chT <- diff
 }
